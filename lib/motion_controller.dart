@@ -8,15 +8,23 @@ enum HeadGesture { skip, correct }
 
 class MotionController {
   final _gestureController = StreamController<HeadGesture>.broadcast();
+  final _positionController = StreamController<bool>.broadcast();
+  
   Stream<HeadGesture> get gestureStream => _gestureController.stream;
+  Stream<bool> get positionStream => _positionController.stream;
 
   static const double skipAngle = 30;       // tilt UP
   static const double correctAngle = -30;   // tilt DOWN
   static const double neutralZone = 15;     // ±15°
   static const int stableMs = 300;
 
+  // Position detection thresholds
+  static const double foreheadMinPitch = -100;  // Phone tilted back (on forehead)
+  static const double foreheadMaxPitch = -50;   // Range for forehead position
+  
   bool _canDetect = true;
   DateTime _lastStable = DateTime.now();
+  bool _lastPositionState = false;
 
   MotionController() {
     accelerometerEvents.listen(_onAccelerometer);
@@ -24,6 +32,21 @@ class MotionController {
 
   void _onAccelerometer(AccelerometerEvent e) {
     final pitch = _calculatePitch(e.x, e.y, e.z);
+
+    // Check if phone is in forehead position (tilted back significantly)
+    final isInPosition = pitch >= foreheadMinPitch && pitch <= foreheadMaxPitch;
+    
+    // Only emit position changes to reduce stream updates
+    if (isInPosition != _lastPositionState) {
+      _lastPositionState = isInPosition;
+      _positionController.add(isInPosition);
+    }
+
+    // Don't process gestures if not in position
+    if (!isInPosition) {
+      _canDetect = true; // Reset detection when not in position
+      return;
+    }
 
     // Check neutral stability
     if (pitch.abs() < neutralZone) {
@@ -52,5 +75,6 @@ class MotionController {
 
   void dispose() {
     _gestureController.close();
+    _positionController.close();
   }
 }
