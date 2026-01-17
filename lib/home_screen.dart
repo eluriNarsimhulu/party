@@ -11,8 +11,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int selectedSeconds = 60;
-  final List<int> timeOptions = [60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360, 390, 420];
+  int selectedSeconds = 30;
+  final List<int> timeOptions = [30,60, 90, 120, 150, 180, 210, 240, 270, 300, 330, 360, 390, 420];
 
   @override
   void initState() {
@@ -124,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(height: 12),
                             _buildInstruction(Icons.arrow_upward, "Tilt UP to skip(no pt)"),
                             const SizedBox(height: 12),
-                            _buildInstruction(Icons.lightbulb_outline, "Hint button+correct = 0.5 points"),
+                            _buildInstruction(Icons.lightbulb_outline, "Hint button + correct = 0.5 points"),
                           ],
                         ),
 

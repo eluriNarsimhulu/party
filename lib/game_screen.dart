@@ -39,6 +39,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   bool gameStarted = false;
   int countdown = 4; // 4 = instruction, 3, 2, 1, 0 = Let's Go
   bool phoneInPosition = false; // Track if phone is in correct position
+  bool last10sPlayed = false; // Track if last 10s sound has been played
+  bool countdownSoundPlayed = false; // Track if countdown sound has been played
 
   bool hintShown = false;
   bool hintUsedForCurrent = false;
@@ -102,7 +104,11 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       setState(() => phoneInPosition = isInPosition);
       
       // Start countdown only when phone is in position for the first time
-      if (isInPosition && countdown == 4) {
+      if (isInPosition && countdown == 4 && !countdownSoundPlayed) {
+        countdownSoundPlayed = true;
+        // Play countdown sound when starting countdown
+        audio.stop();
+        audio.play(AssetSource('sounds/startcount.mp3'));
         _startCountdownTimer();
       }
     });
@@ -149,7 +155,16 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         t.cancel();
         _gameOver();
       } else {
-        setState(() => timeLeft--);
+        setState(() {
+          timeLeft--;
+          
+          // Play last 10 seconds sound at 10 seconds remaining
+          if (timeLeft == 9 && !last10sPlayed) {
+            last10sPlayed = true;
+            audio.stop();
+            audio.play(AssetSource('sounds/last_10s_time_ending.mp3'));
+          }
+        });
       }
     });
 
@@ -205,6 +220,12 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
             print('➡️  Next Movie: ${currentMovie.title}');
             print('---');
           });
+          
+          // Resume last 10s sound if it was interrupted and we're still in last 10 seconds
+          if (last10sPlayed && timeLeft <= 10 && timeLeft > 0) {
+            audio.stop();
+            audio.play(AssetSource('sounds/last_10s_time_ending.mp3'));
+          }
         }
       });
     });
@@ -488,8 +509,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       bgColor1 = const Color(0xFF11998E);
       bgColor2 = const Color(0xFF38EF7D);
       
-      // Play let's go sound
-      audio.stop();
+      // Play let's go sound (will play after startcount.mp3 finishes)
       audio.play(AssetSource('sounds/letsgo.mp3'));
     } else {
       displayText = "$countdown";
@@ -709,7 +729,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
                 // Hint card
                 if (hintShown && hintsRemaining >= 0) ...[
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 8),
                   Container(
                     constraints: const BoxConstraints(maxWidth: 600),
                     margin: const EdgeInsets.symmetric(horizontal: 60),

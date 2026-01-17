@@ -74,7 +74,9 @@ class MotionController {
   }
 
   void dispose() {
+    
     _gestureController.close();
     _positionController.close();
   }
 }
+
